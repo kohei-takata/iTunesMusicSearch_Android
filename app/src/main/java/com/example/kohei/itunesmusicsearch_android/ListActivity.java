@@ -1,6 +1,7 @@
 package com.example.kohei.itunesmusicsearch_android;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
@@ -9,6 +10,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -43,6 +45,7 @@ public class ListActivity extends AppCompatActivity {
         mAdapter = new ListAdapter(this, R.layout.list_item);
         ListView listView = (ListView) findViewById(R.id.list_view);
         listView.setAdapter(mAdapter);
+        listView.setOnItemClickListener(new OnItemClickListenter());
 
         final EditText editText = (EditText) findViewById(R.id.edit_text);
         editText.setOnKeyListener(new OnKeyListener());
@@ -120,6 +123,19 @@ public class ListActivity extends AppCompatActivity {
                 return true;
             }
             return false;
+        }
+    }
+
+    private class OnItemClickListenter implements AdapterView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+            Intent intent = new Intent(ListActivity.this, DetailActivity.class);
+
+            JSONObject result = mAdapter.getItem(position);
+            intent.putExtra("track_name", result.optString("trackName"));
+            intent.putExtra("preview_url", result.optString("previewUrl"));
+
+            startActivity(intent);
         }
     }
 }

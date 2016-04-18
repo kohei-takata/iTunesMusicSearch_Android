@@ -17,6 +17,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_below="@+id/edit_text"
-        tools:listitem="@layout/list_item"></ListView>
+        android:layout_below="@id/edit_text"
+        tools:listitem="@layout/list_item"/>
 </RelativeLayout>

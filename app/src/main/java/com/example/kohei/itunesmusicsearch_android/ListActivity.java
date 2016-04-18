@@ -3,35 +3,49 @@ package com.example.kohei.itunesmusicsearch_android;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
 import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 public class ListActivity extends AppCompatActivity {
 
     private RequestQueue mRequestQueue;
     private ImageLoader mImageLoader;
-    private android.widget.ListAdapter mAdapter;
+    private ListAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_list);
         mRequestQueue = Volley.newRequestQueue(this);
         mImageLoader = new ImageLoader(mRequestQueue, new LruImageCache());
         mAdapter = new ListAdapter(this, R.layout.list_item);
         ListView listView = (ListView) findViewById(R.id.list_view);
         listView.setAdapter(mAdapter);
 
-        setContentView(R.layout.activity_list);
+        final EditText editText = (EditText) findViewById(R.id.edit_text);
+        editText.setOnKeyListener(new OnKeyListener());
     }
 
     private class ListAdapter extends ArrayAdapter<JSONObject> {
@@ -64,6 +78,48 @@ public class ListActivity extends AppCompatActivity {
             artistTextView.setText(result.optString("artistName"));
 
             return convertView;
+        }
+    }
+
+    private class OnKeyListener implements View.OnKeyListener {
+
+        @Override
+        public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
+            if (keyEvent.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_ENTER) {
+                EditText editText = (EditText) view;
+
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+
+                String text = editText.getText().toString();
+                try {
+                    text = URLEncoder.encode(text, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    Log.e("", e.toString(), e);
+                    return true;
+                }
+                if (!TextUtils.isEmpty(text)) {
+                    String url = "https://itunes.apple.com/search?term=" + text + "&country=JP&media=music&lang=ja_jp";
+                    mRequestQueue.add(new JsonObjectRequest(Request.Method.GET, url, new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d("", response.toString());
+
+                            mAdapter.clear();
+
+                            JSONArray results = response.optJSONArray("results");
+                            if (results != null) {
+                                for (int i = 0; i < results.length(); i++) {
+                                    mAdapter.add(results.optJSONObject(i));
+                                }
+                            }
+                        }
+                    },
+                    null));
+                }
+                return true;
+            }
+            return false;
         }
     }
 }
